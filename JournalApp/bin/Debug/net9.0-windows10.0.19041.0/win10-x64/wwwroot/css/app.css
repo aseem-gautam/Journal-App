@@ -1,0 +1,196 @@
+﻿/* Layout */
+.app-layout {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: linear-gradient(180deg, #1b2a6d, #4b0055);
+    color: white;
+    padding: 20px;
+}
+
+/* App title */
+.app-title {
+    margin-bottom: 30px;
+    font-size: 20px;
+}
+
+/* Nav menu */
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+    .nav-menu a {
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+    }
+
+        .nav-menu a.active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+/* Main content */
+.content {
+    flex: 1;
+    padding: 30px;
+    background: #f9f9f9;
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+/* Page title */
+.page-title {
+    font-size: 26px;
+    margin-bottom: 25px;
+}
+
+/* Journal grid */
+.journal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+/* Journal card */
+.journal-card {
+    background: white;
+    padding: 18px;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+
+    .journal-card:hover {
+        transform: translateY(-4px);
+    }
+
+/* Title */
+.journal-title {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+/* Text */
+.journal-text {
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 15px;
+}
+
+/* Meta section */
+.journal-meta {
+    display: flex;
+    gap: 10px;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+    /* Tag */
+    .badge.tag {
+        background: #e6f0ff;
+        color: #1a4fd8;
+    }
+
+    /* Mood colors */
+    .badge.mood.happy {
+        background: #e6f9ec;
+        color: #1f8f4e;
+    }
+
+    .badge.mood.sad {
+        background: #eef0ff;
+        color: #4a5bdc;
+    }
+
+    .badge.mood.angry {
+        background: #ffecec;
+        color: #c62828;
+    }
+
+
+/* Centering wrapper */
+.create-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 40px;
+}
+
+/* Card container */
+.create-card {
+    width: 100%;
+    max-width: 480px;
+    background: white;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Purple title */
+.create-title {
+    text-align: center;
+    color: #5b2b82;
+    margin-bottom: 25px;
+    font-size: 26px;
+}
+
+/* Form layout */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+    /* Inputs */
+    .form input,
+    .form textarea,
+    .form select {
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    .form textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* Labels */
+    .form label {
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 8px;
+    }
+
+/* Button */
+.btn {
+    margin-top: 20px;
+    background: #5b2b82;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+    .btn:hover {
+        background: #4a236b;
+    }
+
