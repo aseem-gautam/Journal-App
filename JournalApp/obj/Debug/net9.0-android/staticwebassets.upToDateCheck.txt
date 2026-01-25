@@ -1,8 +1,8 @@
+wwwroot\css\app.css
 wwwroot\css\bootstrap\bootstrap.min.css
 wwwroot\css\bootstrap\bootstrap.min.css.map
 wwwroot\index.html
-wwwroot\css\app.css
+C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\wwwroot\css\app.css
 C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\wwwroot\css\bootstrap\bootstrap.min.css
 C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\wwwroot\css\bootstrap\bootstrap.min.css.map
 C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\wwwroot\index.html
-C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\wwwroot\css\app.css
