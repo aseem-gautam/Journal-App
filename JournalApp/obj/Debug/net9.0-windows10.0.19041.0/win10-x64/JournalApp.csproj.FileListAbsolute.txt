@@ -579,5 +579,6 @@ C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalAp
 C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt
 C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt.intermediate
 C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\MultipleQualifiersPerDimensionFound.txt
-C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\xjerm3jp46-jtufxsulae.gz
-C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\xjerm3jp46-jtufxsulae.br
+C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\JournalApp.sourcelink.json
+C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\xjerm3jp46-t0b84x4thx.gz
+C:\Users\acer\Documents\Academics\Islington\Application Dev\JournalApp\JournalApp\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\xjerm3jp46-t0b84x4thx.br

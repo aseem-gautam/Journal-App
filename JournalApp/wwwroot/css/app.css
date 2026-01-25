@@ -1,4 +1,4 @@
-﻿/* Layout */
+﻿﻿ /* Layout */
 .app-layout {
     display: flex;
     height: 100vh;
@@ -193,4 +193,3 @@ body {
     .btn:hover {
         background: #4a236b;
     }
-
