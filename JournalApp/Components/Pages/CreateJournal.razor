@@ -1,33 +1,224 @@
 ﻿@page "/create"
 
-<div class="create-wrapper">
-    <div class="create-card">
-        <h2 class="create-title">Create Journal</h2>
+<div class="create-container">
+    <h2>@(isEditMode ? "✏️ Edit Entry" : "✍️ Create New Entry")</h2>
+    <p class="text-muted">@selectedDate.ToString("dddd, MMMM dd, yyyy")</p>
 
-        <div class="form">
-            <label>Journal Title</label>
-            <input placeholder="Journal Title" />
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
 
-            <label>Date</label>
-            <input type="date" />
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
 
-            <label>Journal Content</label>
-            <textarea placeholder="Write your journal here..."></textarea>
+    <div class="form-section">
+        <div class="mb-3">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-control" @bind="selectedDate" @bind:event="oninput" @onchange="OnDateChanged" />
+        </div>
 
-            <label>Mood</label>
-            <select>
-                <option>Happy</option>
-                <option>Sad</option>
-                <option>Angry</option>
-            </select>
+        <div class="mb-3">
+            <label class="form-label">Title *</label>
+            <input type="text" class="form-control" @bind="title" placeholder="Give your entry a title..." />
+        </div>
 
-            <label>Tag</label>
-            <select>
-                <option>Work</option>
-                <option>Study</option>
-            </select>
+        <div class="mb-3">
+            <label class="form-label">Content *</label>
+            <textarea class="form-control content-editor" rows="12" @bind="content" placeholder="Start writing... (Supports Markdown)"></textarea>
+            <small class="text-muted">Word count: @wordCount</small>
+        </div>
 
-            <button class="btn">Save Journal</button>
+        <div class="mb-3">
+            <label class="form-label">Primary Mood * @(selectedPrimaryMood != null ? selectedPrimaryMood.Icon : "")</label>
+            <div class="mood-selector">
+                @foreach (var mood in allMoods)
+                {
+                    <button type="button" 
+                            class="mood-btn @(selectedPrimaryMood?.Id == mood.Id ? "selected" : "")"
+                            style="background-color: @(selectedPrimaryMood?.Id == mood.Id ? mood.Color : "#f0f0f0")"
+                            @onclick="() => SelectPrimaryMood(mood)">
+                        <span class="mood-icon">@mood.Icon</span>
+                        <span class="mood-name">@mood.Name</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Secondary Moods (Optional - Max 2) @string.Join(" ", selectedSecondaryMoods.Select(m => m.Icon))</label>
+            <div class="mood-selector">
+                @foreach (var mood in allMoods.Where(m => m.Id != selectedPrimaryMood?.Id))
+                {
+                    <button type="button" 
+                            class="mood-btn @(selectedSecondaryMoods.Any(sm => sm.Id == mood.Id) ? "selected" : "")"
+                            style="background-color: @(selectedSecondaryMoods.Any(sm => sm.Id == mood.Id) ? mood.Color : "#f0f0f0")"
+                            @onclick="() => ToggleSecondaryMood(mood)"
+                            disabled="@(selectedSecondaryMoods.Count >= 2 && !selectedSecondaryMoods.Any(sm => sm.Id == mood.Id))">
+                        <span class="mood-icon">@mood.Icon</span>
+                        <span class="mood-name">@mood.Name</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Tags (Optional)</label>
+            <div class="tag-input-group">
+                <input type="text" class="form-control" @bind="newTagName" placeholder="Add custom tag..." @onkeypress="HandleTagKeyPress" />
+                <button type="button" class="btn btn-secondary" @onclick="AddCustomTag">Add Tag</button>
+            </div>
+            
+            <div class="tags-container mt-2">
+                <p class="text-muted mb-2">Available Tags:</p>
+                @foreach (var tag in allTags)
+                {
+                    <button type="button" 
+                            class="tag-chip @(selectedTags.Any(t => t.Id == tag.Id) ? "selected" : "")"
+                            @onclick="() => ToggleTag(tag)">
+                        #@tag.Name
+                    </button>
+                }
+            </div>
+
+            @if (selectedTags.Any())
+            {
+                <div class="mt-2">
+                    <p class="text-muted mb-2">Selected Tags:</p>
+                    @foreach (var tag in selectedTags)
+                    {
+                        <span class="badge bg-primary me-2">
+                            #@tag.Name
+                            <button type="button" class="btn-close btn-close-white btn-sm ms-1" @onclick="() => RemoveTag(tag)"></button>
+                        </span>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Category (Optional)</label>
+            <input type="text" class="form-control" @bind="category" placeholder="e.g., Personal, Work, Travel..." />
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary btn-lg" @onclick="SaveEntry" disabled="@isSaving">
+                @(isSaving ? "Saving..." : isEditMode ? "Update Entry" : "Save Entry")
+            </button>
+            
+            @if (isEditMode)
+            {
+                <button class="btn btn-danger" @onclick="DeleteEntry" disabled="@isSaving">
+                    Delete Entry
+                </button>
+            }
+            
+            <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
         </div>
     </div>
 </div>
+
+<style>
+    .create-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-section {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .content-editor {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+    }
+
+    .mood-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .mood-btn {
+        padding: 15px 10px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .mood-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .mood-btn.selected {
+        border-color: #333;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .mood-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .mood-icon {
+        font-size: 32px;
+    }
+
+    .mood-name {
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .tag-input-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .tag-chip {
+        padding: 6px 12px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+
+    .tag-chip:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+    }
+
+    .tag-chip.selected {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+</style>
+

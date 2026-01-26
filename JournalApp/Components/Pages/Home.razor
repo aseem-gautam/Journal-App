@@ -1,29 +1,122 @@
 ﻿@page "/"
+@inject SecurityService SecurityService
+@inject NavigationManager Navigation
+@inject JournalService JournalService
+@inject StreakService StreakService
 
-<h2 class="page-title">My Journals</h2>
+@if (!SecurityService.IsAuthenticated)
+{
+    <Login />
+}
+else
+{
+    <div class="home-container">
+        <div class="welcome-section">
+            <h1>Welcome back, @(SecurityService.CurrentUser?.Name ?? "Writer")! 👋</h1>
+            <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+        </div>
 
-<div class="journal-grid">
-    <div class="journal-card">
-        <h4 class="journal-title">Good Day</h4>
-        <p class="journal-text">
-            Feeling productive and happy today 😊
-        </p>
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">🔥 Current Streak</h5>
+                        <h2 class="stat-number">@streakInfo.CurrentStreak</h2>
+                        <p class="text-muted">days</p>
+                    </div>
+                </div>
+            </div>
 
-        <div class="journal-meta">
-            <span class="badge tag">Work</span>
-            <span class="badge mood happy">Happy</span>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">🏆 Longest Streak</h5>
+                        <h2 class="stat-number">@streakInfo.LongestStreak</h2>
+                        <p class="text-muted">days</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">📝 Total Entries</h5>
+                        <h2 class="stat-number">@streakInfo.TotalEntries</h2>
+                        <p class="text-muted">entries</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            @if (todayEntry != null)
+            {
+                <div class="alert alert-success">
+                    ✅ You've already written today! Great job!
+                </div>
+                <button class="btn btn-primary" @onclick="EditTodayEntry">Edit Today's Entry</button>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    📝 You haven't written today yet. Keep your streak going!
+                </div>
+                <button class="btn btn-primary btn-lg" @onclick="CreateEntry">Write Today's Entry</button>
+            }
+        </div>
+
+        <div class="mt-5">
+            <h3>Recent Entries</h3>
+            @if (recentEntries.Any())
+            {
+                <div class="list-group">
+                    @foreach (var entry in recentEntries)
+                    {
+                        <a href="#" class="list-group-item list-group-item-action" @onclick="() => ViewEntry(entry.Id)">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">@entry.Title</h5>
+                                <small>@entry.Date.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <p class="mb-1">@entry.PrimaryMood.Icon @entry.PrimaryMood.Name</p>
+                            <small>@entry.WordCount words</small>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">No entries yet. Start writing!</p>
+            }
         </div>
     </div>
+}
 
-    <div class="journal-card">
-        <h4 class="journal-title">Exams Stress</h4>
-        <p class="journal-text">
-            A bit stressed with upcoming exams 😔
-        </p>
+<style>
+    .home-container {
+        padding: 20px;
+    }
 
-        <div class="journal-meta">
-            <span class="badge tag">Study</span>
-            <span class="badge mood sad">Sad</span>
-        </div>
-    </div>
-</div>
+    .welcome-section {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        text-align: center;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-number {
+        font-size: 48px;
+        font-weight: bold;
+        color: #4CAF50;
+        margin: 10px 0;
+    }
+</style>
+

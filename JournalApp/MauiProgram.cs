@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using JournalApp.Data;
+using JournalApp.Services;
 
 namespace JournalApp
 {
@@ -17,11 +20,40 @@ namespace JournalApp
             builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
-    		builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Logging.AddDebug();
 #endif
 
-            return builder.Build();
+            // Configure Database
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "journal.db");
+
+            builder.Services.AddDbContext<JournalDbContext>(options =>
+                options.UseSqlite($"Data Source={dbPath}"));
+
+            // Register all Services
+            builder.Services.AddScoped<DatabaseService>();
+            builder.Services.AddScoped<SecurityService>();
+            builder.Services.AddScoped<JournalService>();
+            builder.Services.AddScoped<MoodService>();
+            builder.Services.AddScoped<TagService>();
+            builder.Services.AddScoped<StreakService>();
+            builder.Services.AddScoped<AnalyticsService>();
+            builder.Services.AddScoped<ExportService>();
+            builder.Services.AddSingleton<ThemeService>();
+
+            var app = builder.Build();
+
+            // Initialize database on startup
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbService = scope.ServiceProvider.GetRequiredService<DatabaseService>();
+                dbService.InitializeAsync().Wait();
+
+                // Print database path for debugging
+                System.Diagnostics.Debug.WriteLine($"Database location: {dbService.GetDatabasePath()}");
+            }
+
+            return app;
         }
     }
 }
