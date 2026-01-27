@@ -1,12 +1,499 @@
 ﻿@page "/analytics"
+@using JournalApp.Services
+@using JournalApp.Models
+@inject AnalyticsService AnalyticsService
+@inject StreakService StreakService
+@inject NavigationManager Navigation
+@inject SecurityService SecurityService
+@inject ExportService ExportService
+@inject IJSRuntime JSRuntime
 
-<h3 class="page-title">Journal List</h3>
-@page "/list"
 
-<h3>Journal List</h3>
+<div class="analytics-container">
+    <h2>📊 Journal Analytics</h2>
+    
+    <!-- Date Range Filter -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Start Date</label>
+                <input type="date" class="form-control" @bind="startDate" @bind:after="LoadAnalytics" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">End Date</label>
+                <input type="date" class="form-control" @bind="endDate" @bind:after="LoadAnalytics" />
+            </div>
+        </div>
+    </div>
 
-<ul class="journal-list">
-    <li>Good Day</li>
-    <li>Exams Stress</li>
-    <li>Weekend Thoughts</li>
-</ul>
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading analytics...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Streak Stats -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <h3>@streakInfo.CurrentStreak</h3>
+                    <p>Current Streak</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <h3>@streakInfo.LongestStreak</h3>
+                    <p>Longest Streak</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <h3>@totalEntries</h3>
+                    <p>Total Entries</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">❌</div>
+                    <h3>@streakInfo.MissedDays.Count</h3>
+                    <p>Missed Days</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mood Distribution -->
+        <div class="chart-section mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>😊 Mood Distribution</h4>
+                    <canvas id="moodDistributionChart" width="400" height="200"></canvas>
+                    
+                    <div class="mood-stats mt-3">
+                        @foreach (var mood in moodDistribution)
+                        {
+                            <div class="mood-stat-item">
+                                <span class="mood-label">@mood.Category:</span>
+                                <span class="mood-value">@mood.Count entries (@mood.Percentage%)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Frequent Moods -->
+        <div class="chart-section mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>🎯 Most Frequent Moods</h4>
+                    <canvas id="frequentMoodsChart" width="400" height="200"></canvas>
+                    
+                    <div class="frequent-moods mt-3">
+                        @foreach (var mood in frequentMoods)
+                        {
+                            <div class="frequent-mood-item">
+                                <span class="mood-emoji">@mood.Icon</span>
+                                <span class="mood-name">@mood.MoodName</span>
+                                <span class="mood-count">@mood.Count times</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Used Tags -->
+        <div class="chart-section mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>🏷️ Most Used Tags</h4>
+                    <canvas id="tagsChart" width="400" height="200"></canvas>
+                    
+                    <div class="tags-list mt-3">
+                        @foreach (var tag in mostUsedTags)
+                        {
+                            <span class="tag-badge" style="font-size: @(14 + (tag.Count * 2))px;">
+                                #@tag.TagName (@tag.Count)
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Word Count Stats -->
+        <div class="chart-section mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>📈 Word Count Trends</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="word-stat">
+                                <h3>@averageWordCount</h3>
+                                <p>Average Words per Entry</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="word-stat">
+                                <h3>@totalWords</h3>
+                                <p>Total Words Written</p>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="wordCountChart" width="400" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="chart-section mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>📤 Export Journal Data</h4>
+                    <p class="text-muted">Export your journal entries for the selected date range</p>
+
+                    @if (!string.IsNullOrEmpty(exportMessage))
+                    {
+                        <div class="alert alert-info">@exportMessage</div>
+                    }
+
+                    <div class="export-buttons">
+                        <button class="btn btn-primary" @onclick="@(() => ExportData("html"))" disabled="@isExporting">
+                            📄 @(isExporting ? "Exporting..." : "Export as HTML")
+                        </button>
+                        <button class="btn btn-primary" @onclick="@(() => ExportData("markdown"))" disabled="@isExporting">
+                            📝 @(isExporting ? "Exporting..." : "Export as Markdown")
+                        </button>
+                        <button class="btn btn-primary" @onclick="@(() => ExportData("text"))" disabled="@isExporting">
+                            📋 @(isExporting ? "Exporting..." : "Export as Text")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .analytics-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .stat-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
+    }
+
+    .stat-card h3 {
+        font-size: 36px;
+        font-weight: bold;
+        color: #4CAF50;
+        margin: 10px 0;
+    }
+
+    .stat-card p {
+        color: #666;
+        margin: 0;
+    }
+
+    .chart-section {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card {
+        border: none;
+    }
+
+    .mood-stats, .frequent-moods, .tags-list {
+        margin-top: 20px;
+    }
+
+    .mood-stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .mood-label {
+        font-weight: 600;
+    }
+
+    .frequent-mood-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+        margin: 5px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .mood-emoji {
+        font-size: 24px;
+    }
+
+    .mood-name {
+        font-weight: 600;
+    }
+
+    .mood-count {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .tags-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tag-badge {
+        display: inline-block;
+        padding: 8px 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .word-stat {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .word-stat h3 {
+        font-size: 48px;
+        font-weight: bold;
+        color: #2196F3;
+        margin: 0;
+    }
+
+    .word-stat p {
+        color: #666;
+        margin-top: 10px;
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;    
+    }
+
+    .export-buttons button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+    }
+</style>
+
+@code {
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+    private bool isLoading = true;
+
+    private StreakInfo streakInfo = new();
+    private List<MoodDistribution> moodDistribution = new();
+    private List<MoodFrequency> frequentMoods = new();
+    private List<TagUsage> mostUsedTags = new();
+    private List<WordCountTrend> wordCountTrends = new();
+    
+    private int totalEntries = 0;
+    private double averageWordCount = 0;
+    private int totalWords = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!SecurityService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAnalytics();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderCharts();
+        }
+    }
+
+    private async Task LoadAnalytics()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Load all analytics data
+            streakInfo = await StreakService.GetStreakInfoAsync();
+            moodDistribution = await AnalyticsService.GetMoodDistributionAsync(startDate, endDate);
+            frequentMoods = await AnalyticsService.GetMostFrequentMoodsAsync(5, startDate, endDate);
+            mostUsedTags = await AnalyticsService.GetMostUsedTagsAsync(10, startDate, endDate);
+            wordCountTrends = await AnalyticsService.GetWordCountTrendsAsync(startDate, endDate);
+            
+            totalEntries = await AnalyticsService.GetEntriesCountAsync(startDate, endDate);
+            averageWordCount = await AnalyticsService.GetAverageWordCountAsync(startDate, endDate);
+            totalWords = await AnalyticsService.GetTotalWordCountAsync(startDate, endDate);
+
+            isLoading = false;
+            StateHasChanged();
+
+            // Render charts after data is loaded
+            await Task.Delay(100);
+            await RenderCharts();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading analytics: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+    private async Task ResetDateRange()
+    {
+        startDate = null;
+        endDate = null;
+        await LoadAnalytics();
+    }
+
+    private async Task RenderCharts()
+    {
+        try
+        {
+            // Mood Distribution Chart
+            if (moodDistribution.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("renderMoodDistributionChart",
+                    moodDistribution.Select(m => m.Category).ToArray(),
+                    moodDistribution.Select(m => m.Count).ToArray());
+            }
+
+            // Frequent Moods Chart
+            if (frequentMoods.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("renderFrequentMoodsChart",
+                    frequentMoods.Select(m => m.MoodName).ToArray(),
+                    frequentMoods.Select(m => m.Count).ToArray());
+            }
+
+            // Tags Chart
+            if (mostUsedTags.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("renderTagsChart",
+                    mostUsedTags.Select(t => t.TagName).ToArray(),
+                    mostUsedTags.Select(t => t.Count).ToArray());
+            }
+
+            // Word Count Chart
+            if (wordCountTrends.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("renderWordCountChart",
+                    wordCountTrends.Select(w => w.Date.ToString("MMM dd")).ToArray(),
+                    wordCountTrends.Select(w => w.WordCount).ToArray(),
+                    wordCountTrends.Select(w => w.AverageWordCount).ToArray());
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error rendering charts: {ex.Message}");
+        }
+    }
+
+
+    // Add these fields
+    private bool isExporting = false;
+    private string exportMessage = string.Empty;
+
+    // Add this method
+    private async Task ExportData(string format)
+    {
+        exportMessage = string.Empty;
+        isExporting = true;
+
+        try
+        {
+            var downloadsPath = Path.Combine(FileSystem.AppDataDirectory, "Exports");
+
+            // Create exports directory if it doesn't exist
+            if (!Directory.Exists(downloadsPath))
+            {
+                Directory.CreateDirectory(downloadsPath);
+            }
+
+            // Use the same date range filter from analytics
+            var exportStartDate = startDate ?? DateTime.MinValue;
+            var exportEndDate = endDate ?? DateTime.MaxValue;
+
+            string filePath = string.Empty;
+
+            switch (format.ToLower())
+            {
+                case "html":
+                    filePath = await ExportService.ExportToPdfAsync(exportStartDate, exportEndDate, downloadsPath);
+                    break;
+                case "markdown":
+                    filePath = await ExportService.ExportToMarkdownAsync(exportStartDate, exportEndDate, downloadsPath);
+                    break;
+                case "text":
+                    filePath = await ExportService.ExportToTextAsync(exportStartDate, exportEndDate, downloadsPath);
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                exportMessage = $"✅ Exported successfully! File saved to: {filePath}";
+            }
+            else
+            {
+                exportMessage = "⚠️ No entries found in the selected date range";
+            }
+        }
+        catch (Exception ex)
+        {
+            exportMessage = $"❌ Export failed: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Export error: {ex.Message}");
+        }
+        finally
+        {
+            isExporting = false;
+        }
+    }
+}

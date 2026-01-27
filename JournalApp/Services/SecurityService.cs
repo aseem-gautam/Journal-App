@@ -6,13 +6,13 @@ namespace JournalApp.Services
 {
     public class SecurityService
     {
-        private readonly JournalDbContext _context;
+        private readonly IServiceProvider _serviceProvider;
         private User? _currentUser;
         private bool _isAuthenticated = false;
 
-        public SecurityService(JournalDbContext context)
+        public SecurityService(IServiceProvider serviceProvider)
         {
-            _context = context;
+            _serviceProvider = serviceProvider;
         }
 
         public bool IsAuthenticated => _isAuthenticated;
@@ -21,7 +21,10 @@ namespace JournalApp.Services
         // Check if user has completed initial setup
         public async Task<bool> HasCompletedSetupAsync()
         {
-            var user = await _context.Users.FirstOrDefaultAsync();
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
+
+            var user = await context.Users.FirstOrDefaultAsync();
             return user != null && user.HasSetupCompleted;
         }
 
@@ -36,8 +39,11 @@ namespace JournalApp.Services
                     return false;
                 }
 
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
+
                 // Check if user already exists
-                var existingUser = await _context.Users.FirstOrDefaultAsync();
+                var existingUser = await context.Users.FirstOrDefaultAsync();
                 if (existingUser != null)
                 {
                     return false;
@@ -46,18 +52,19 @@ namespace JournalApp.Services
                 var user = new User
                 {
                     Name = name,
-                    PIN = pin, // In production, you might want to hash this
+                    PIN = pin,
                     CreatedAt = DateTime.Now,
                     HasSetupCompleted = true,
                     IsDarkMode = false
                 };
 
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                context.Users.Add(user);
+                await context.SaveChangesAsync();
 
                 _currentUser = user;
                 _isAuthenticated = true;
 
+                System.Diagnostics.Debug.WriteLine($"User created and authenticated: {user.Name}");
                 return true;
             }
             catch (Exception ex)
@@ -72,20 +79,28 @@ namespace JournalApp.Services
         {
             try
             {
-                var user = await _context.Users.FirstOrDefaultAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
+
+                var user = await context.Users.FirstOrDefaultAsync();
 
                 if (user == null)
                 {
+                    System.Diagnostics.Debug.WriteLine("Authentication failed: No user found");
                     return false;
                 }
+
+                System.Diagnostics.Debug.WriteLine($"Checking PIN: entered={pin}, stored={user.PIN}");
 
                 if (user.PIN == pin)
                 {
                     _currentUser = user;
                     _isAuthenticated = true;
+                    System.Diagnostics.Debug.WriteLine($"Authentication successful for: {user.Name}");
                     return true;
                 }
 
+                System.Diagnostics.Debug.WriteLine("Authentication failed: PIN mismatch");
                 return false;
             }
             catch (Exception ex)
@@ -117,10 +132,19 @@ namespace JournalApp.Services
                     return false;
                 }
 
-                _currentUser.PIN = newPin;
-                await _context.SaveChangesAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
 
-                return true;
+                var user = await context.Users.FindAsync(_currentUser.Id);
+                if (user != null)
+                {
+                    user.PIN = newPin;
+                    await context.SaveChangesAsync();
+                    _currentUser.PIN = newPin;
+                    return true;
+                }
+
+                return false;
             }
             catch (Exception ex)
             {
@@ -134,6 +158,7 @@ namespace JournalApp.Services
         {
             _isAuthenticated = false;
             _currentUser = null;
+            System.Diagnostics.Debug.WriteLine("User logged out");
         }
 
         // Get current user
@@ -144,7 +169,9 @@ namespace JournalApp.Services
                 return _currentUser;
             }
 
-            _currentUser = await _context.Users.FirstOrDefaultAsync();
+            using var scope = _serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
+            _currentUser = await context.Users.FirstOrDefaultAsync();
             return _currentUser;
         }
 
@@ -158,10 +185,19 @@ namespace JournalApp.Services
                     return false;
                 }
 
-                _currentUser.IsDarkMode = isDarkMode;
-                await _context.SaveChangesAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
 
-                return true;
+                var user = await context.Users.FindAsync(_currentUser.Id);
+                if (user != null)
+                {
+                    user.IsDarkMode = isDarkMode;
+                    await context.SaveChangesAsync();
+                    _currentUser.IsDarkMode = isDarkMode;
+                    return true;
+                }
+
+                return false;
             }
             catch (Exception ex)
             {
@@ -180,10 +216,19 @@ namespace JournalApp.Services
                     return false;
                 }
 
-                _currentUser.Name = newName;
-                await _context.SaveChangesAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<JournalDbContext>();
 
-                return true;
+                var user = await context.Users.FindAsync(_currentUser.Id);
+                if (user != null)
+                {
+                    user.Name = newName;
+                    await context.SaveChangesAsync();
+                    _currentUser.Name = newName;
+                    return true;
+                }
+
+                return false;
             }
             catch (Exception ex)
             {

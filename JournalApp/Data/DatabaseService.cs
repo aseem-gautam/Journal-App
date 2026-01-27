@@ -15,9 +15,8 @@ namespace JournalApp.Data
         {
             try
             {
-                // FOR DEVELOPMENT ONLY - Recreates database on every run
-                // Remove these two lines once you want to keep your data!
-                await _context.Database.EnsureDeletedAsync();
+                // REMOVED: await _context.Database.EnsureDeletedAsync();
+                // This was deleting the database every time!
 
                 // Create database if it doesn't exist
                 await _context.Database.EnsureCreatedAsync();
@@ -37,7 +36,7 @@ namespace JournalApp.Data
             return await _context.Database.CanConnectAsync();
         }
 
-        // Method to reset database during development
+        // Method to reset database during development (call this manually if needed)
         public async Task ResetDatabaseAsync()
         {
             try

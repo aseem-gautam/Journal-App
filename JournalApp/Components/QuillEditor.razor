@@ -1,0 +1,128 @@
+﻿@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<div class="quill-editor-container">
+    <div @ref="editorElement" class="quill-editor"></div>
+</div>
+
+<style>
+    .quill-editor-container {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .quill-editor {
+        min-height: 400px;
+        background: white;
+    }
+
+    /* Custom Quill styling */
+    .ql-toolbar {
+        background: #f8f9fa;
+        border-bottom: 1px solid #ccc !important;
+        border: none;
+    }
+
+    .ql-container {
+        border: none !important;
+        font-size: 16px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .ql-editor {
+        min-height: 350px;
+        padding: 20px;
+    }
+
+        .ql-editor.ql-blank::before {
+            color: #aaa;
+            font-style: normal;
+        }
+</style>
+
+@code {
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> TextChanged { get; set; }
+
+    private ElementReference editorElement;
+    private IJSObjectReference? module;
+    private DotNetObjectReference<QuillEditor>? dotNetHelper;
+    private bool isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                dotNetHelper = DotNetObjectReference.Create(this);
+
+                // Initialize Quill editor
+                await JSRuntime.InvokeVoidAsync("quillFunctions.createQuill", editorElement, dotNetHelper);
+
+                // Set initial content if provided
+                if (!string.IsNullOrEmpty(Value))
+                {
+                    await JSRuntime.InvokeVoidAsync("quillFunctions.setQuillContent", editorElement, Value);
+                }
+
+                isInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing Quill: {ex.Message}");
+            }
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnContentChanged(string html, string text)
+    {
+        await ValueChanged.InvokeAsync(html);
+        await TextChanged.InvokeAsync(text);
+    }
+
+    public async Task<string> GetContent()
+    {
+        if (!isInitialized) return string.Empty;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<string>("quillFunctions.getQuillContent", editorElement);
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    public async Task SetContent(string content)
+    {
+        if (!isInitialized) return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("quillFunctions.setQuillContent", editorElement, content);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting content: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotNetHelper?.Dispose();
+        if (module != null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}

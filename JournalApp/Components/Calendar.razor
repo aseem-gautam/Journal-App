@@ -1,0 +1,302 @@
+﻿@using JournalApp.Services
+@using JournalApp.Models
+@inject JournalService JournalService
+@inject NavigationManager Navigation
+
+<div class="calendar-widget">
+    <div class="calendar-header">
+        <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousMonth">◀</button>
+        <h4>@currentMonth.ToString("MMMM yyyy")</h4>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="NextMonth">▶</button>
+    </div>
+
+    <div class="calendar-grid">
+        <!-- Day headers -->
+        <div class="calendar-day-header">Sun</div>
+        <div class="calendar-day-header">Mon</div>
+        <div class="calendar-day-header">Tue</div>
+        <div class="calendar-day-header">Wed</div>
+        <div class="calendar-day-header">Thu</div>
+        <div class="calendar-day-header">Fri</div>
+        <div class="calendar-day-header">Sat</div>
+
+        <!-- Days -->
+        @foreach (var day in calendarDays)
+        {
+            <div class="calendar-day @GetDayClass(day)" @onclick="@(() => OnDayClick(day))">
+                @if (day.HasValue)
+                {
+                    <span>@day.Value.Day</span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="calendar-legend mt-3">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4a90e2;"></div>
+            <span>Today</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4CAF50;"></div>
+            <span>Entry Written</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #e9ecef;"></div>
+            <span>Future Days</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f8f9fa; opacity: 0.5;"></div>
+            <span>Past (locked)</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-widget {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+        .calendar-header h4 {
+            margin: 0;
+            color: #333;
+        }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+
+    .calendar-day-header {
+        text-align: center;
+        font-weight: 600;
+        color: #666;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+        background: #f8f9fa;
+    }
+
+        .calendar-day span {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .calendar-day:hover:not(.empty):not(.past):not(.future) {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day.past {
+            background: #f8f9fa;
+            color: #999;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+            .calendar-day.past:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+        .calendar-day.future {
+            background: #e9ecef;
+            color: #666;
+            cursor: default;
+        }
+
+            .calendar-day.future:hover {
+                transform: none;
+            }
+
+        .calendar-day.today {
+            background: #4a90e2 !important;
+            color: white;
+            font-weight: bold;
+            border-color: #2a70c2;
+        }
+
+            .calendar-day.today:hover {
+                background: #3a80d2 !important;
+            }
+
+            .calendar-day.today.has-entry {
+                background: #4CAF50 !important;
+                border-color: #388E3C;
+            }
+
+                .calendar-day.today.has-entry:hover {
+                    background: #45a049 !important;
+                }
+
+    .calendar-legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public EventCallback OnEntryClick { get; set; }
+
+    private DateTime currentMonth = DateTime.Today;
+    private List<DateTime?> calendarDays = new();
+    private HashSet<DateTime> datesWithEntries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCalendar();
+    }
+
+    private async Task LoadCalendar()
+    {
+        // Get all entries for the current month
+        var startOfMonth = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+
+        var entries = await JournalService.GetEntriesByDateRangeAsync(startOfMonth, endOfMonth);
+        datesWithEntries = entries.Select(e => e.Date.Date).ToHashSet();
+
+        // Build calendar grid
+        GenerateCalendarDays();
+    }
+
+    private void GenerateCalendarDays()
+    {
+        calendarDays.Clear();
+
+        var firstDayOfMonth = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+        // Add empty days before the first day of month
+        int startDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+        for (int i = 0; i < startDayOfWeek; i++)
+        {
+            calendarDays.Add(null);
+        }
+
+        // Add all days of the month
+        for (int day = 1; day <= lastDayOfMonth.Day; day++)
+        {
+            calendarDays.Add(new DateTime(currentMonth.Year, currentMonth.Month, day));
+        }
+
+        // Fill remaining slots to complete the grid
+        while (calendarDays.Count % 7 != 0)
+        {
+            calendarDays.Add(null);
+        }
+    }
+
+    private async Task PreviousMonth()
+    {
+        currentMonth = currentMonth.AddMonths(-1);
+        await LoadCalendar();
+    }
+
+    private async Task NextMonth()
+    {
+        currentMonth = currentMonth.AddMonths(1);
+        await LoadCalendar();
+    }
+
+    private string GetDayClass(DateTime? day)
+    {
+        if (!day.HasValue) return "empty";
+
+        var classes = new List<string>();
+        var today = DateTime.Today;
+
+        // Check if it's today
+        if (day.Value.Date == today)
+        {
+            classes.Add("today");
+
+            // If today has an entry, add has-entry class
+            if (HasEntry(day.Value))
+            {
+                classes.Add("has-entry");
+            }
+        }
+        // Check if it's a past date (before today)
+        else if (day.Value.Date < today)
+        {
+            classes.Add("past");
+        }
+        // Future dates
+        else
+        {
+            classes.Add("future");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private bool HasEntry(DateTime day)
+    {
+        return datesWithEntries.Contains(day.Date);
+    }
+
+    private void OnDayClick(DateTime? day)
+    {
+        if (!day.HasValue) return;
+
+        var today = DateTime.Today;
+
+        // Only allow clicking on today
+        if (day.Value.Date != today)
+        {
+            return; // Do nothing for past or future dates
+        }
+
+        // Navigate to create/edit entry for today
+        Navigation.NavigateTo($"/create?date={day.Value:yyyy-MM-dd}");
+    }
+}

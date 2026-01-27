@@ -3,13 +3,52 @@
 @inject SecurityService SecurityService
 @inject NavigationManager Navigation
 
+<PageTitle>Login - My Journal</PageTitle>
+
 <div class="login-container">
     <div class="login-card">
         <h2>🔐 Welcome to Your Journal</h2>
 
-        @if (!isSetupComplete)
+        <!-- Tab Navigation -->
+        <div class="nav nav-tabs mb-4" role="tablist">
+            <button class="nav-link @(activeTab == "login" ? "active" : "")"
+                    @onclick="@(() => SwitchTab("login"))">
+                Login
+            </button>
+            <button class="nav-link @(activeTab == "register" ? "active" : "")"
+                    @onclick="@(() => SwitchTab("register"))">
+                Register
+            </button>
+        </div>
+
+        @if (activeTab == "login")
         {
-            <p class="text-muted">Let's set up your journal</p>
+            <!-- LOGIN FORM -->
+            <p class="text-muted">Enter your PIN to unlock</p>
+
+            <div class="mb-3">
+                <label for="loginPin" class="form-label">PIN</label>
+                <input type="password"
+                       class="form-control"
+                       id="loginPin"
+                       @bind="loginPin"
+                       @bind:event="oninput"
+                       maxlength="6"
+                       placeholder="Enter your PIN"
+                       @onkeydown="HandleKeyDown" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <button class="btn btn-primary w-100" @onclick="Login">Unlock</button>
+        }
+        else
+        {
+            <!-- REGISTER FORM -->
+            <p class="text-muted">Create a new account</p>
 
             <div class="mb-3">
                 <label for="name" class="form-label">Your Name (Optional)</label>
@@ -31,23 +70,12 @@
                 <div class="alert alert-danger">@errorMessage</div>
             }
 
-            <button class="btn btn-primary w-100" @onclick="SetupAccount">Create Account</button>
-        }
-        else
-        {
-            <p class="text-muted">Enter your PIN to continue</p>
-
-            <div class="mb-3">
-                <label for="loginPin" class="form-label">PIN</label>
-                <input type="password" class="form-control" id="loginPin" @bind="loginPin" maxlength="6" placeholder="Enter your PIN" @onkeypress="HandleKeyPress" />
-            </div>
-
-            @if (!string.IsNullOrEmpty(errorMessage))
+            @if (!string.IsNullOrEmpty(infoMessage))
             {
-                <div class="alert alert-danger">@errorMessage</div>
+                <div class="alert alert-info">@infoMessage</div>
             }
 
-            <button class="btn btn-primary w-100" @onclick="Login">Unlock</button>
+            <button class="btn btn-primary w-100" @onclick="Register">Create Account</button>
         }
     </div>
 </div>
@@ -57,22 +85,179 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 80vh;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
     }
 
     .login-card {
         background: white;
         padding: 40px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        max-width: 400px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        max-width: 450px;
         width: 100%;
     }
 
-    .login-card h2 {
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+    .text-muted {
         text-align: center;
-        margin-bottom: 30px;
-        color: #333;
+        margin-bottom: 20px;
     }
+
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav-link {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border: none;
+        background: transparent;
+        color: #666;
+        cursor: pointer;
+        font-weight: 600;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+
+        .nav-link:hover {
+            color: #667eea;
+        }
+
+        .nav-link.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
 </style>
 
+@code {
+    private string activeTab = "login";
+    private string name = string.Empty;
+    private string pin = string.Empty;
+    private string confirmPin = string.Empty;
+    private string loginPin = string.Empty;
+    private string errorMessage = string.Empty;
+    private string infoMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if already authenticated
+        if (SecurityService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/home");
+            return;
+        }
+
+        // Check if user exists - if not, default to register tab
+        try
+        {
+            var hasUser = await SecurityService.HasCompletedSetupAsync();
+            if (!hasUser)
+            {
+                activeTab = "register";
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Setup check error: {ex.Message}");
+            activeTab = "register";
+        }
+    }
+
+    private void SwitchTab(string tab)
+    {
+        activeTab = tab;
+        errorMessage = string.Empty;
+        infoMessage = string.Empty;
+    }
+
+    private async Task Register()
+    {
+        errorMessage = string.Empty;
+        infoMessage = string.Empty;
+
+        // Validate PIN
+        if (string.IsNullOrWhiteSpace(pin) || pin.Length < 4 || pin.Length > 6)
+        {
+            errorMessage = "PIN must be 4-6 digits";
+            return;
+        }
+
+        if (!pin.All(char.IsDigit))
+        {
+            errorMessage = "PIN must contain only numbers";
+            return;
+        }
+
+        if (pin != confirmPin)
+        {
+            errorMessage = "PINs do not match";
+            return;
+        }
+
+        // Try to setup user
+        var success = await SecurityService.SetupUserAsync(name, pin);
+
+        if (success)
+        {
+            Navigation.NavigateTo("/home", true);
+        }
+        else
+        {
+            errorMessage = "An account already exists. Please login or clear existing data from Settings.";
+            infoMessage = "Note: This is a single-user journal app. To create a new account, you must first delete the existing one from Settings > Clear All Data.";
+        }
+    }
+
+    private async Task Login()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(loginPin))
+        {
+            errorMessage = "Please enter your PIN";
+            return;
+        }
+
+        var success = await SecurityService.AuthenticateAsync(loginPin);
+
+        if (success)
+        {
+            Navigation.NavigateTo("/home", true);
+        }
+        else
+        {
+            errorMessage = "Incorrect PIN. Please try again.";
+            loginPin = string.Empty;
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Login();
+        }
+    }
+}

@@ -1,18 +1,326 @@
-@page "/settings"
+﻿@page "/settings"
+@using JournalApp.Services
+@using JournalApp.Models
+@inject SecurityService SecurityService
+@inject ThemeService ThemeService
+@inject JournalService JournalService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<h3>Settings</h3>
+<div class="settings-container">
+    <h2>⚙️ Settings</h2>
 
-<div class="form">
-    <label>Name</label>
-    <input value="Aseem Gautam" />
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="@(() => successMessage = string.Empty)"></button>
+        </div>
+    }
 
-    <label>Date of Birth</label>
-    <input type="date" />
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="@(() => errorMessage = string.Empty)"></button>
+        </div>
+    }
 
-    <label>
-        <input type="checkbox" />
-        Dark Mode
-    </label>
+    <!-- User Profile -->
+    <div class="settings-section">
+        <h4>👤 User Profile</h4>
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" @bind="userName" placeholder="Your name" />
+                </div>
+                <button class="btn btn-primary" @onclick="UpdateName">Update Name</button>
+            </div>
+        </div>
+    </div>
 
-    <button class="btn">Save Settings</button>
+    <!-- Security -->
+    <div class="settings-section mt-4">
+        <h4>🔐 Security</h4>
+        <div class="card">
+            <div class="card-body">
+                <h5>Change PIN</h5>
+                <div class="mb-3">
+                    <label class="form-label">Current PIN</label>
+                    <input type="password" class="form-control" @bind="currentPin" maxlength="6" placeholder="Enter current PIN" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New PIN (4-6 digits)</label>
+                    <input type="password" class="form-control" @bind="newPin" maxlength="6" placeholder="Enter new PIN" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirm New PIN</label>
+                    <input type="password" class="form-control" @bind="confirmNewPin" maxlength="6" placeholder="Confirm new PIN" />
+                </div>
+                <button class="btn btn-primary" @onclick="ChangePin">Change PIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme -->
+    <div class="settings-section mt-4">
+        <h4>🎨 Appearance</h4>
+        <div class="card">
+            <div class="card-body">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="darkModeSwitch"
+                           @bind="isDarkMode" @bind:after="ToggleTheme" />
+                    <label class="form-check-label" for="darkModeSwitch">
+                        @(isDarkMode ? "🌙 Dark Mode" : "☀️ Light Mode")
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="settings-section mt-4">
+        <h4>📊 Journal Statistics</h4>
+        <div class="card">
+            <div class="card-body">
+                <div class="stat-row">
+                    <span class="stat-label">Total Entries:</span>
+                    <span class="stat-value">@totalEntries</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Account Created:</span>
+                    <span class="stat-value">@accountCreatedDate</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Database Location:</span>
+                    <span class="stat-value">@databasePath</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About -->
+    <div class="settings-section mt-4">
+        <h4>ℹ️ About</h4>
+        <div class="card">
+            <div class="card-body">
+                <h5>My Journal App</h5>
+                <p>Version 1.0.0</p>
+                <p class="text-muted">A personal journaling application with mood tracking, tags, and analytics.</p>
+                <p class="text-muted">Built with .NET MAUI Blazor</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-section mt-4">
+        <h4>⚠️ Danger Zone</h4>
+        <div class="card border-danger">
+            <div class="card-body">
+                <h5 class="text-danger">Clear All Data</h5>
+                <p class="text-muted">This will delete all your journal entries. This action cannot be undone!</p>
+                <button class="btn btn-danger" @onclick="ClearAllData">Clear All Data</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .settings-section {
+        margin-bottom: 20px;
+    }
+
+        .settings-section h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+    .stat-label {
+        font-weight: 600;
+        color: #666;
+    }
+
+    .stat-value {
+        color: #333;
+    }
+
+    .form-check-input:checked {
+        background-color: #4CAF50;
+        border-color: #4CAF50;
+    }
+</style>
+
+@code {
+    private string userName = string.Empty;
+    private string currentPin = string.Empty;
+    private string newPin = string.Empty;
+    private string confirmNewPin = string.Empty;
+    private bool isDarkMode = false;
+
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private int totalEntries = 0;
+    private string accountCreatedDate = string.Empty;
+    private string databasePath = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!SecurityService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadUserSettings();
+    }
+
+    private async Task LoadUserSettings()
+    {
+        try
+        {
+            var user = await SecurityService.GetCurrentUserAsync();
+            if (user != null)
+            {
+                userName = user.Name ?? string.Empty;
+                isDarkMode = user.IsDarkMode;
+                accountCreatedDate = user.CreatedAt.ToString("MMMM dd, yyyy");
+            }
+
+            totalEntries = await JournalService.GetTotalEntriesCountAsync();
+            databasePath = Path.Combine(FileSystem.AppDataDirectory, "journal.db");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateName()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            errorMessage = "Name cannot be empty";
+            return;
+        }
+
+        var success = await SecurityService.UpdateUserNameAsync(userName);
+        if (success)
+        {
+            successMessage = "Name updated successfully! ✅";
+        }
+        else
+        {
+            errorMessage = "Failed to update name";
+        }
+    }
+
+    private async Task ChangePin()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        // Validation
+        if (string.IsNullOrWhiteSpace(currentPin))
+        {
+            errorMessage = "Please enter your current PIN";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newPin) || newPin.Length < 4 || newPin.Length > 6)
+        {
+            errorMessage = "New PIN must be 4-6 digits";
+            return;
+        }
+
+        if (!newPin.All(char.IsDigit))
+        {
+            errorMessage = "PIN must contain only numbers";
+            return;
+        }
+
+        if (newPin != confirmNewPin)
+        {
+            errorMessage = "New PINs do not match";
+            return;
+        }
+
+        var success = await SecurityService.ChangePINAsync(currentPin, newPin);
+        if (success)
+        {
+            successMessage = "PIN changed successfully! ✅";
+            currentPin = string.Empty;
+            newPin = string.Empty;
+            confirmNewPin = string.Empty;
+        }
+        else
+        {
+            errorMessage = "Failed to change PIN. Please check your current PIN.";
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        ThemeService.SetTheme(isDarkMode);
+        await SecurityService.UpdateThemePreferenceAsync(isDarkMode);
+        successMessage = $"Theme changed to {(isDarkMode ? "Dark" : "Light")} mode! 🎨";
+    }
+
+    private async Task ClearAllData()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "⚠️ WARNING: This will permanently delete ALL your journal entries! This action CANNOT be undone. Are you absolutely sure?");
+
+        if (!confirmed)
+            return;
+
+        var doubleConfirm = await JSRuntime.InvokeAsync<bool>("confirm",
+            "This is your last chance! Are you really sure you want to delete everything?");
+
+        if (!doubleConfirm)
+            return;
+
+        try
+        {
+            // Get all entries and delete them
+            var entries = await JournalService.GetEntriesAsync(1, 10000);
+            foreach (var entry in entries)
+            {
+                await JournalService.DeleteEntryAsync(entry.Id);
+            }
+
+            successMessage = "All data has been cleared successfully";
+            totalEntries = 0;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to clear data: {ex.Message}";
+        }
+    }
+}

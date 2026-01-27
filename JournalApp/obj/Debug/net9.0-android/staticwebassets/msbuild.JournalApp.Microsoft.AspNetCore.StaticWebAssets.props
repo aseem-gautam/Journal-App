@@ -12,12 +12,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>t0b84x4thx</Fingerprint>
-      <Integrity>zRFardVjgmccZ1tNqIGGU0799dOg+5lAjInJehD5Tww=</Integrity>
+      <Fingerprint>e5tk7yf482</Fingerprint>
+      <Integrity>bhCZyC/yM2+DaFXr8z25+5MeWfXWqMJNNA4ZLAXbjjU=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>3325</FileLength>
-      <LastWriteTime>Sun, 25 Jan 2026 15:52:38 GMT</LastWriteTime>
+      <FileLength>3376</FileLength>
+      <LastWriteTime>Tue, 27 Jan 2026 05:27:51 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\app.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\bootstrap\bootstrap.min.css'))">
@@ -72,12 +72,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>jc7tdlmbau</Fingerprint>
-      <Integrity>c4s7GmzVz4AsJ/NCisMU76l2gOsMYrfnQU2Rihea0JY=</Integrity>
+      <Fingerprint>lw4gjrs796</Fingerprint>
+      <Integrity>1TucIkqXAkp6aG8dcenL2HB0uW9zn9jiRIyp7k5tDf8=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>853</FileLength>
-      <LastWriteTime>Sun, 21 Dec 2025 04:10:29 GMT</LastWriteTime>
+      <FileLength>1231</FileLength>
+      <LastWriteTime>Tue, 27 Jan 2026 05:36:47 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\index.html'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\JournalApp.styles.css'))">
@@ -99,6 +99,46 @@
       <FileLength>5481</FileLength>
       <LastWriteTime>Sun, 21 Dec 2025 04:10:41 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\JournalApp.styles.css'))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\chart.js'))">
+      <SourceType>Package</SourceType>
+      <SourceId>JournalApp</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>/</BasePath>
+      <RelativePath>js/chart.js</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <Fingerprint>68wh3k0naz</Fingerprint>
+      <Integrity>ms/DuNdera60sD03zZZi/0XLIKwAvMYZxETi8S5DyUI=</Integrity>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <FileLength>4578</FileLength>
+      <LastWriteTime>Tue, 27 Jan 2026 05:36:31 GMT</LastWriteTime>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\chart.js'))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\quillInterop.js'))">
+      <SourceType>Package</SourceType>
+      <SourceId>JournalApp</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>/</BasePath>
+      <RelativePath>js/quillInterop.js</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <Fingerprint>sefpj0qiw0</Fingerprint>
+      <Integrity>RC1hJ1sC5z86aO9B7BSX8rMNtgobvnS33vx/19eYN+4=</Integrity>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <FileLength>1741</FileLength>
+      <LastWriteTime>Tue, 27 Jan 2026 05:30:12 GMT</LastWriteTime>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\quillInterop.js'))</OriginalItemSpec>
     </StaticWebAsset>
   </ItemGroup>
 </Project>

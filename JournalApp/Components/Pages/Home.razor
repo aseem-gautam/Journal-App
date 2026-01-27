@@ -1,95 +1,101 @@
-﻿@page "/"
+﻿@page "/home"
+@using JournalApp.Services
+@using JournalApp.Models
+@using JournalApp.Components
 @inject SecurityService SecurityService
 @inject NavigationManager Navigation
 @inject JournalService JournalService
 @inject StreakService StreakService
 
-@if (!SecurityService.IsAuthenticated)
-{
-    <Login />
-}
-else
-{
-    <div class="home-container">
-        <div class="welcome-section">
-            <h1>Welcome back, @(SecurityService.CurrentUser?.Name ?? "Writer")! 👋</h1>
-            <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
-        </div>
+<div class="home-container">
+    <div class="welcome-section">
+        <h1>Welcome back, @(SecurityService.CurrentUser?.Name ?? "Writer")! 👋</h1>
+        <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+    </div>
 
-        <div class="row mt-4">
-            <div class="col-md-4">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title">🔥 Current Streak</h5>
-                        <h2 class="stat-number">@streakInfo.CurrentStreak</h2>
-                        <p class="text-muted">days</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title">🏆 Longest Streak</h5>
-                        <h2 class="stat-number">@streakInfo.LongestStreak</h2>
-                        <p class="text-muted">days</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title">📝 Total Entries</h5>
-                        <h2 class="stat-number">@streakInfo.TotalEntries</h2>
-                        <p class="text-muted">entries</p>
-                    </div>
+    <!-- Streak Stats -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">🔥 Current Streak</h5>
+                    <h2 class="stat-number">@streakInfo.CurrentStreak</h2>
+                    <p class="text-muted">days</p>
                 </div>
             </div>
         </div>
 
-        <div class="mt-4">
-            @if (todayEntry != null)
-            {
-                <div class="alert alert-success">
-                    ✅ You've already written today! Great job!
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">🏆 Longest Streak</h5>
+                    <h2 class="stat-number">@streakInfo.LongestStreak</h2>
+                    <p class="text-muted">days</p>
                 </div>
-                <button class="btn btn-primary" @onclick="EditTodayEntry">Edit Today's Entry</button>
-            }
-            else
-            {
-                <div class="alert alert-info">
-                    📝 You haven't written today yet. Keep your streak going!
-                </div>
-                <button class="btn btn-primary btn-lg" @onclick="CreateEntry">Write Today's Entry</button>
-            }
+            </div>
         </div>
 
-        <div class="mt-5">
-            <h3>Recent Entries</h3>
-            @if (recentEntries.Any())
-            {
-                <div class="list-group">
-                    @foreach (var entry in recentEntries)
-                    {
-                        <a href="#" class="list-group-item list-group-item-action" @onclick="() => ViewEntry(entry.Id)">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">@entry.Title</h5>
-                                <small>@entry.Date.ToString("MMM dd, yyyy")</small>
-                            </div>
-                            <p class="mb-1">@entry.PrimaryMood.Icon @entry.PrimaryMood.Name</p>
-                            <small>@entry.WordCount words</small>
-                        </a>
-                    }
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">📝 Total Entries</h5>
+                    <h2 class="stat-number">@streakInfo.TotalEntries</h2>
+                    <p class="text-muted">entries</p>
                 </div>
-            }
-            else
-            {
-                <p class="text-muted">No entries yet. Start writing!</p>
-            }
+            </div>
         </div>
     </div>
-}
+
+    <!-- Calendar -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <Calendar />
+        </div>
+    </div>
+
+    <!-- Today's Entry Status -->
+    <div class="mt-4">
+        @if (todayEntry != null)
+        {
+            <div class="alert alert-success">
+                ✅ You've already written today! Great job!
+            </div>
+            <button class="btn btn-primary" @onclick="EditTodayEntry">Edit Today's Entry</button>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                📝 You haven't written today yet. Keep your streak going!
+            </div>
+            <button class="btn btn-primary btn-lg" @onclick="CreateEntry">Write Today's Entry</button>
+        }
+    </div>
+
+    <!-- Recent Entries -->
+    <div class="mt-5">
+        <h3>Recent Entries</h3>
+        @if (recentEntries.Any())
+        {
+            <div class="list-group">
+                @foreach (var entry in recentEntries)
+                {
+                    <a href="#" class="list-group-item list-group-item-action" @onclick="@(() => ViewEntry(entry.Id))" @onclick:preventDefault="true">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">@entry.Title</h5>
+                            <small>@entry.Date.ToString("MMM dd, yyyy")</small>
+                        </div>
+                        <p class="mb-1">@entry.PrimaryMood.Icon @entry.PrimaryMood.Name</p>
+                        <small>@entry.WordCount words</small>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No entries yet. Start writing!</p>
+        }
+    </div>
+</div>
 
 <style>
     .home-container {
@@ -118,5 +124,63 @@ else
         color: #4CAF50;
         margin: 10px 0;
     }
+
+    .list-group-item {
+        cursor: pointer;
+    }
 </style>
 
+@code {
+    private StreakInfo streakInfo = new();
+    private JournalEntry? todayEntry;
+    private List<JournalEntry> recentEntries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check authentication and redirect if not logged in
+        if (!SecurityService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            streakInfo = await StreakService.GetStreakInfoAsync();
+            todayEntry = await JournalService.GetTodayEntryAsync();
+            recentEntries = await JournalService.GetEntriesAsync(1, 5);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading home data: {ex.Message}");
+        }
+    }
+
+    private void CreateEntry()
+    {
+        Navigation.NavigateTo("/create");
+    }
+
+    private void EditTodayEntry()
+    {
+        if (todayEntry != null)
+        {
+            Navigation.NavigateTo($"/create?date={todayEntry.Date:yyyy-MM-dd}");
+        }
+    }
+
+    private void ViewEntry(int entryId)
+    {
+        // Find the entry and navigate to its date
+        var entry = recentEntries.FirstOrDefault(e => e.Id == entryId);
+        if (entry != null)
+        {
+            Navigation.NavigateTo($"/create?date={entry.Date:yyyy-MM-dd}");
+        }
+    }
+}

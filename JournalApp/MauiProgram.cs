@@ -32,7 +32,10 @@ namespace JournalApp
 
             // Register all Services
             builder.Services.AddScoped<DatabaseService>();
-            builder.Services.AddScoped<SecurityService>();
+
+            // IMPORTANT: SecurityService must be Singleton to maintain auth state
+            builder.Services.AddSingleton<SecurityService>();
+
             builder.Services.AddScoped<JournalService>();
             builder.Services.AddScoped<MoodService>();
             builder.Services.AddScoped<TagService>();

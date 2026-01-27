@@ -1,0 +1,17 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+@inject SecurityService SecurityService
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (SecurityService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/home", true);
+        }
+        else
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+    }
+}
