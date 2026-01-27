@@ -9,124 +9,526 @@
 
 <div class="home-container">
     <div class="welcome-section">
-        <h1>Welcome back, @(SecurityService.CurrentUser?.Name ?? "Writer")! 👋</h1>
-        <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+        <h1 class="welcome-title">Welcome back, @(SecurityService.CurrentUser?.Name ?? "Writer")! 👋</h1>
+        <p class="welcome-date">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
     </div>
 
     <!-- Streak Stats -->
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h5 class="card-title">🔥 Current Streak</h5>
-                    <h2 class="stat-number">@streakInfo.CurrentStreak</h2>
-                    <p class="text-muted">days</p>
-                </div>
+    <div class="stats-grid">
+        <div class="stat-card stat-card--current">
+            <div class="stat-card__icon">🔥</div>
+            <div class="stat-card__content">
+                <h5 class="stat-card__label">Current Streak</h5>
+                <div class="stat-card__number">@streakInfo.CurrentStreak</div>
+                <p class="stat-card__unit">days</p>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h5 class="card-title">🏆 Longest Streak</h5>
-                    <h2 class="stat-number">@streakInfo.LongestStreak</h2>
-                    <p class="text-muted">days</p>
-                </div>
+        <div class="stat-card stat-card--longest">
+            <div class="stat-card__icon">🏆</div>
+            <div class="stat-card__content">
+                <h5 class="stat-card__label">Longest Streak</h5>
+                <div class="stat-card__number">@streakInfo.LongestStreak</div>
+                <p class="stat-card__unit">days</p>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h5 class="card-title">📝 Total Entries</h5>
-                    <h2 class="stat-number">@streakInfo.TotalEntries</h2>
-                    <p class="text-muted">entries</p>
-                </div>
+        <div class="stat-card stat-card--total">
+            <div class="stat-card__icon">📝</div>
+            <div class="stat-card__content">
+                <h5 class="stat-card__label">Total Entries</h5>
+                <div class="stat-card__number">@streakInfo.TotalEntries</div>
+                <p class="stat-card__unit">entries</p>
             </div>
         </div>
     </div>
 
-    <!-- Calendar -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <Calendar />
-        </div>
-    </div>
-
-    <!-- Today's Entry Status -->
-    <div class="mt-4">
-        @if (todayEntry != null)
-        {
-            <div class="alert alert-success">
-                ✅ You've already written today! Great job!
+    <!-- Two Column Layout: Calendar Left, Recent Entries Right -->
+    <div class="content-grid">
+        <!-- Left Column: Calendar & Entry Status -->
+        <div class="content-grid__left">
+            <div class="calendar-section">
+                <Calendar />
             </div>
-            <button class="btn btn-primary" @onclick="EditTodayEntry">Edit Today's Entry</button>
-        }
-        else
-        {
-            <div class="alert alert-info">
-                📝 You haven't written today yet. Keep your streak going!
-            </div>
-            <button class="btn btn-primary btn-lg" @onclick="CreateEntry">Write Today's Entry</button>
-        }
-    </div>
 
-    <!-- Recent Entries -->
-    <div class="mt-5">
-        <h3>Recent Entries</h3>
-        @if (recentEntries.Any())
-        {
-            <div class="list-group">
-                @foreach (var entry in recentEntries)
+            <!-- Today's Entry Status -->
+            <div class="entry-status">
+                @if (todayEntry != null)
                 {
-                    <a href="#" class="list-group-item list-group-item-action" @onclick="@(() => ViewEntry(entry.Id))" @onclick:preventDefault="true">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">@entry.Title</h5>
-                            <small>@entry.Date.ToString("MMM dd, yyyy")</small>
+                    <div class="status-alert status-alert--success">
+                        <div class="status-alert__icon">✅</div>
+                        <div class="status-alert__content">
+                            <p class="status-alert__message">You've already written today! Great job!</p>
                         </div>
-                        <p class="mb-1">@entry.PrimaryMood.Icon @entry.PrimaryMood.Name</p>
-                        <small>@entry.WordCount words</small>
-                    </a>
+                    </div>
+                    <button class="btn-action btn-action--secondary" @onclick="EditTodayEntry">
+                        <span class="btn-action__icon">✏️</span>
+                        Edit Today's Entry
+                    </button>
+                }
+                else
+                {
+                    <div class="status-alert status-alert--info">
+                        <div class="status-alert__icon">📝</div>
+                        <div class="status-alert__content">
+                            <p class="status-alert__message">You haven't written today yet. Keep your streak going!</p>
+                        </div>
+                    </div>
+                    <button class="btn-action btn-action--primary" @onclick="CreateEntry">
+                        <span class="btn-action__icon">✨</span>
+                        Write Today's Entry
+                    </button>
                 }
             </div>
-        }
-        else
-        {
-            <p class="text-muted">No entries yet. Start writing!</p>
-        }
+        </div>
+
+        <!-- Right Column: Recent Entries -->
+        <div class="content-grid__right">
+            <div class="recent-entries">
+                <h3 class="section-title">Recent Entries</h3>
+                @if (recentEntries.Any())
+                {
+                    <div class="entries-list">
+                        @foreach (var entry in recentEntries)
+                        {
+                            <a href="#" class="entry-card" @onclick="@(() => ViewEntry(entry.Id))" @onclick:preventDefault="true">
+                                <div class="entry-card__header">
+                                    <h5 class="entry-card__title">@entry.Title</h5>
+                                    <span class="entry-card__date">@entry.Date.ToString("MMM dd, yyyy")</span>
+                                </div>
+                                <div class="entry-card__footer">
+                                    <span class="entry-card__mood">@entry.PrimaryMood.Icon @entry.PrimaryMood.Name</span>
+                                    <span class="entry-card__wordcount">@entry.WordCount words</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state__icon">📖</div>
+                        <p class="empty-state__message">No entries yet. Start writing!</p>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
-    .home-container {
-        padding: 20px;
+    :root {
+        --color-primary: #4a90e2;
+        --color-primary-dark: #357abd;
+        --color-success: #4CAF50;
+        --color-success-dark: #45a049;
+        --color-warning: #ff9800;
+        --color-info: #17a2b8;
+        --color-text-primary: #2c3e50;
+        --color-text-secondary: #6c757d;
+        --color-text-muted: #95a5a6;
+        --color-bg-light: #f8f9fa;
+        --color-bg-white: #ffffff;
+        --color-border: #e9ecef;
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    .home-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 32px 24px;
+        background: var(--color-bg-light);
+    }
+
+    /* Welcome Section */
     .welcome-section {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 48px;
+        animation: fadeInDown 0.6s ease-out;
+    }
+
+    .welcome-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin-bottom: 8px;
+        line-height: 1.2;
+    }
+
+    .welcome-date {
+        font-size: 1.125rem;
+        color: var(--color-text-secondary);
+        margin: 0;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 48px;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
     }
 
     .stat-card {
-        text-align: center;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
+        background: var(--color-bg-white);
+        border-radius: var(--radius-lg);
+        padding: 32px 24px;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        border: 2px solid transparent;
     }
 
-    .stat-card:hover {
-        transform: translateY(-5px);
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+    .stat-card--current:hover {
+        border-color: #ff6b6b;
     }
 
-    .stat-number {
-        font-size: 48px;
-        font-weight: bold;
-        color: #4CAF50;
-        margin: 10px 0;
+    .stat-card--longest:hover {
+        border-color: #ffd93d;
     }
 
-    .list-group-item {
+    .stat-card--total:hover {
+        border-color: var(--color-primary);
+    }
+
+    .stat-card__icon {
+        font-size: 3rem;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .stat-card__content {
+        flex: 1;
+        text-align: left;
+    }
+
+    .stat-card__label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        margin: 0 0 8px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-card__number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--color-success);
+        margin: 0;
+        line-height: 1;
+    }
+
+    .stat-card__unit {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        margin: 4px 0 0 0;
+    }
+
+    /* Two Column Grid Layout */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 600px 1fr;
+        gap: 32px;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .content-grid__left {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .content-grid__right {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Calendar Section */
+    .calendar-section {
+        /* Calendar widget styles are in the calendar component */
+    }
+
+    /* Entry Status */
+    .entry-status {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .status-alert {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 24px;
+        border-radius: var(--radius-md);
+        background: var(--color-bg-white);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .status-alert--success {
+        border-left: 4px solid var(--color-success);
+    }
+
+    .status-alert--info {
+        border-left: 4px solid var(--color-info);
+    }
+
+    .status-alert__icon {
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    .status-alert__content {
+        flex: 1;
+    }
+
+    .status-alert__message {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--color-text-primary);
+        font-weight: 500;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 32px;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: var(--radius-md);
         cursor: pointer;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+    }
+
+    .btn-action__icon {
+        font-size: 1.25rem;
+    }
+
+    .btn-action--primary {
+        background: var(--color-primary);
+        color: white;
+    }
+
+        .btn-action--primary:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-action--secondary {
+        background: var(--color-bg-white);
+        color: var(--color-primary);
+        border: 2px solid var(--color-primary);
+    }
+
+        .btn-action--secondary:hover {
+            background: var(--color-primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* Recent Entries */
+    .recent-entries {
+        height: 100%;
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin-bottom: 24px;
+    }
+
+    .entries-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .entry-card {
+        background: var(--color-bg-white);
+        border-radius: var(--radius-md);
+        padding: 24px;
+        text-decoration: none;
+        color: inherit;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+        border: 2px solid transparent;
+        display: block;
+    }
+
+        .entry-card:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-primary);
+        }
+
+    .entry-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 16px;
+    }
+
+    .entry-card__title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin: 0;
+        flex: 1;
+    }
+
+    .entry-card__date {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+    }
+
+    .entry-card__footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding-top: 12px;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .entry-card__mood {
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        font-weight: 500;
+    }
+
+    .entry-card__wordcount {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 64px 24px;
+        background: var(--color-bg-white);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .empty-state__icon {
+        font-size: 4rem;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state__message {
+        font-size: 1.125rem;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    /* Animations */
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 1200px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .content-grid__left {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .home-container {
+            padding: 24px 16px;
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+        }
+
+        .welcome-date {
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .stat-card {
+            padding: 24px 20px;
+        }
+
+        .stat-card__number {
+            font-size: 2.5rem;
+        }
+
+        .entry-card__header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .welcome-title {
+            font-size: 1.5rem;
+        }
+
+        .stat-card__icon {
+            font-size: 2.5rem;
+        }
+
+        .stat-card__number {
+            font-size: 2rem;
+        }
     }
 </style>
 
@@ -176,11 +578,20 @@
 
     private void ViewEntry(int entryId)
     {
-        // Find the entry and navigate to its date
+        // Find the entry and check if it's today
         var entry = recentEntries.FirstOrDefault(e => e.Id == entryId);
         if (entry != null)
         {
-            Navigation.NavigateTo($"/create?date={entry.Date:yyyy-MM-dd}");
+            // If it's today's entry, go to create page to edit
+            if (entry.Date.Date == DateTime.Today)
+            {
+                Navigation.NavigateTo($"/create?date={entry.Date:yyyy-MM-dd}");
+            }
+            else
+            {
+                // For past entries, go to journals page and show in modal
+                Navigation.NavigateTo($"/journals?date={entry.Date:yyyy-MM-dd}");
+            }
         }
     }
 }

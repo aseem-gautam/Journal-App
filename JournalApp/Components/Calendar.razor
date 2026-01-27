@@ -35,152 +35,301 @@
     <div class="calendar-legend mt-3">
         <div class="legend-item">
             <div class="legend-color" style="background: #4a90e2;"></div>
-            <span>Today</span>
+            <span>Today (No Entry)</span>
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background: #4CAF50;"></div>
             <span>Entry Written</span>
         </div>
         <div class="legend-item">
-            <div class="legend-color" style="background: #e9ecef;"></div>
-            <span>Future Days</span>
+            <div class="legend-color" style="background: #f8f9fa; opacity: 0.5;"></div>
+            <span>No Entry</span>
         </div>
         <div class="legend-item">
-            <div class="legend-color" style="background: #f8f9fa; opacity: 0.5;"></div>
-            <span>Past (locked)</span>
+            <div class="legend-color" style="background: #e9ecef;"></div>
+            <span>Future Days</span>
         </div>
     </div>
 </div>
 
+
 <style>
+    :root {
+        --calendar-primary: #4a90e2;
+        --calendar-primary-hover: #3a80d2;
+        --calendar-primary-dark: #2a70c2;
+        --calendar-success: #4CAF50;
+        --calendar-success-hover: #45a049;
+        --calendar-success-dark: #388E3C;
+        --calendar-bg-light: #f8f9fa;
+        --calendar-bg-medium: #e9ecef;
+        --calendar-text-primary: #333;
+        --calendar-text-secondary: #666;
+        --calendar-text-muted: #999;
+        --calendar-border: #eee;
+        --calendar-border-medium: #ddd;
+        --calendar-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        --calendar-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+        --calendar-radius: 6px;
+        --calendar-radius-large: 10px;
+        --calendar-transition: all 0.2s ease-in-out;
+    }
+
     .calendar-widget {
         background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: var(--calendar-radius-large);
+        padding: 16px;
+        box-shadow: var(--calendar-shadow);
+        max-width: 600px;
+        margin: 0 auto;
     }
 
     .calendar-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
+        gap: 8px;
     }
 
         .calendar-header h4 {
             margin: 0;
-            color: #333;
+            color: var(--calendar-text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
         }
+
+        .calendar-header button {
+            min-width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--calendar-transition);
+            padding: 0;
+            font-size: 0.875rem;
+        }
+
+            .calendar-header button:hover {
+                transform: scale(1.05);
+            }
 
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
+        gap: 4px;
+        margin-bottom: 12px;
     }
 
     .calendar-day-header {
         text-align: center;
         font-weight: 600;
-        color: #666;
-        padding: 10px 0;
-        font-size: 14px;
+        color: var(--calendar-text-secondary);
+        padding: 6px 0;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
     .calendar-day {
         aspect-ratio: 1;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: var(--calendar-radius);
         cursor: pointer;
         position: relative;
-        transition: all 0.2s;
+        transition: var(--calendar-transition);
         border: 2px solid transparent;
-        background: #f8f9fa;
+        background: var(--calendar-bg-light);
+        min-height: 32px;
     }
 
         .calendar-day span {
-            font-size: 16px;
+            font-size: 0.8rem;
             font-weight: 500;
+            line-height: 1;
         }
 
-        .calendar-day:hover:not(.empty):not(.past):not(.future) {
-            transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        /* Interactive states */
+        .calendar-day:not(.empty):not(.future):not(.past-no-entry):hover {
+            transform: translateY(-2px);
+            box-shadow: var(--calendar-shadow-hover);
         }
 
+        .calendar-day:not(.empty):not(.future):not(.past-no-entry):active {
+            transform: translateY(0);
+        }
+
+        /* Empty days */
         .calendar-day.empty {
             background: transparent;
             cursor: default;
+            pointer-events: none;
         }
 
-        .calendar-day.past {
-            background: #f8f9fa;
-            color: #999;
+        /* Past days without entry */
+        .calendar-day.past-no-entry {
+            background: var(--calendar-bg-light);
+            color: var(--calendar-text-muted);
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-            .calendar-day.past:hover {
-                transform: none;
-                box-shadow: none;
-            }
-
-        .calendar-day.future {
-            background: #e9ecef;
-            color: #666;
-            cursor: default;
+        /* Past days with entry */
+        .calendar-day.past-has-entry {
+            background: var(--calendar-success);
+            color: white;
+            font-weight: 600;
         }
 
-            .calendar-day.future:hover {
-                transform: none;
+            .calendar-day.past-has-entry:hover {
+                background: var(--calendar-success-hover);
             }
 
+        /* Future days */
+        .calendar-day.future {
+            background: var(--calendar-bg-medium);
+            color: var(--calendar-text-secondary);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* Today */
         .calendar-day.today {
-            background: #4a90e2 !important;
+            background: var(--calendar-primary) !important;
             color: white;
-            font-weight: bold;
-            border-color: #2a70c2;
+            font-weight: 700;
+            border-color: var(--calendar-primary-dark);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
         }
 
             .calendar-day.today:hover {
-                background: #3a80d2 !important;
+                background: var(--calendar-primary-hover) !important;
             }
 
             .calendar-day.today.has-entry {
-                background: #4CAF50 !important;
-                border-color: #388E3C;
+                background: var(--calendar-success) !important;
+                border-color: var(--calendar-success-dark);
+                box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
             }
 
                 .calendar-day.today.has-entry:hover {
-                    background: #45a049 !important;
+                    background: var(--calendar-success-hover) !important;
                 }
 
+    /* Legend */
     .calendar-legend {
         display: flex;
         justify-content: center;
-        gap: 20px;
+        align-items: center;
+        gap: 12px;
         flex-wrap: wrap;
-        padding-top: 15px;
-        border-top: 1px solid #eee;
+        padding-top: 12px;
+        border-top: 1px solid var(--calendar-border);
     }
 
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        color: #666;
+        gap: 6px;
+        font-size: 0.7rem;
+        color: var(--calendar-text-secondary);
     }
 
     .legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-        border: 1px solid #ddd;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid var(--calendar-border-medium);
+        flex-shrink: 0;
+    }
+
+    .legend-color--today {
+        background: var(--calendar-primary);
+    }
+
+    .legend-color--entry {
+        background: var(--calendar-success);
+    }
+
+    .legend-color--no-entry {
+        background: var(--calendar-bg-light);
+        opacity: 0.5;
+    }
+
+    .legend-color--future {
+        background: var(--calendar-bg-medium);
+    }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .calendar-widget {
+            padding: 12px;
+            max-width: 100%;
+        }
+
+        .calendar-header h4 {
+            font-size: 0.9rem;
+        }
+
+        .calendar-grid {
+            gap: 3px;
+        }
+
+        .calendar-day-header {
+            font-size: 0.65rem;
+            padding: 4px 0;
+        }
+
+        .calendar-day {
+            min-height: 28px;
+        }
+
+            .calendar-day span {
+                font-size: 0.75rem;
+            }
+
+        .calendar-legend {
+            gap: 8px;
+            font-size: 0.65rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .calendar-widget {
+            padding: 10px;
+        }
+
+        .calendar-header h4 {
+            font-size: 0.85rem;
+        }
+
+        .calendar-day-header {
+            font-size: 0.6rem;
+        }
+
+        .calendar-day {
+            min-height: 24px;
+        }
+
+            .calendar-day span {
+                font-size: 0.7rem;
+            }
+
+        .calendar-legend {
+            gap: 6px;
+        }
     }
 </style>
+
 
 @code {
     [Parameter]
@@ -268,7 +417,14 @@
         // Check if it's a past date (before today)
         else if (day.Value.Date < today)
         {
-            classes.Add("past");
+            if (HasEntry(day.Value))
+            {
+                classes.Add("past-has-entry");
+            }
+            else
+            {
+                classes.Add("past-no-entry");
+            }
         }
         // Future dates
         else
@@ -290,13 +446,16 @@
 
         var today = DateTime.Today;
 
-        // Only allow clicking on today
-        if (day.Value.Date != today)
+        // For today: Navigate to create page
+        if (day.Value.Date == today)
         {
-            return; // Do nothing for past or future dates
+            Navigation.NavigateTo($"/create?date={day.Value:yyyy-MM-dd}");
         }
-
-        // Navigate to create/edit entry for today
-        Navigation.NavigateTo($"/create?date={day.Value:yyyy-MM-dd}");
+        // For past days with entries: Navigate to journals page with that date
+        else if (day.Value.Date < today && HasEntry(day.Value))
+        {
+            Navigation.NavigateTo($"/journals?date={day.Value:yyyy-MM-dd}");
+        }
+        // else: do nothing (past without entry or future)
     }
 }

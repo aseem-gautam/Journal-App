@@ -10,8 +10,10 @@
 @inject IJSRuntime JSRuntime
 
 <div class="create-container">
-    <h2>@(isEditMode ? "✏️ Edit Entry" : "✍️ Create New Entry")</h2>
-    <p class="text-muted">@selectedDate.ToString("dddd, MMMM dd, yyyy")</p>
+    <div class="create-header">
+        <h2>@(isEditMode ? "Edit Entry" : "Create New Entry")</h2>
+        <p class="create-date">@selectedDate.ToString("dddd, MMMM dd, yyyy")</p>
+    </div>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -24,188 +26,295 @@
     }
 
     <div class="form-section">
-        <div class="mb-3">
-            <label class="form-label">Date</label>
-            <input type="date" class="form-control" @bind="selectedDate" @bind:after="OnDateChanged" />
+        <!-- Date & Title -->
+        <div class="form-row">
+            <div class="form-col">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" value="@selectedDate.ToString("yyyy-MM-dd")" readonly disabled />
+            </div>
+            <div class="form-col">
+                <label class="form-label">Title *</label>
+                <input type="text" class="form-control" @bind="title" placeholder="Give your entry a title..." />
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Title *</label>
-            <input type="text" class="form-control" @bind="title" placeholder="Give your entry a title..." />
-        </div>
-
-        <div class="mb-3">
+        <!-- Content - Full Width -->
+        <div class="mb-4">
             <label class="form-label">Content *</label>
             <QuillEditor @ref="quillEditor" Value="@content" ValueChanged="@OnContentChanged" TextChanged="@OnTextChanged" />
             <small class="text-muted mt-2 d-block">Word count: @wordCount</small>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Primary Mood * @(selectedPrimaryMood != null ? selectedPrimaryMood.Icon : "")</label>
-            <div class="mood-selector">
-                @foreach (var mood in allMoods)
-                {
-                    <button type="button"
-                            class="mood-btn @(selectedPrimaryMood?.Id == mood.Id ? "selected" : "")"
-                            style="background-color: @(selectedPrimaryMood?.Id == mood.Id ? mood.Color : "#f0f0f0")"
-                            @onclick="() => SelectPrimaryMood(mood)">
-                        <span class="mood-icon">@mood.Icon</span>
-                        <span class="mood-name">@mood.Name</span>
-                    </button>
-                }
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Secondary Moods (Optional - Max 2) @string.Join(" ", selectedSecondaryMoods.Select(m => m.Icon))</label>
-            <div class="mood-selector">
-                @foreach (var mood in allMoods.Where(m => m.Id != selectedPrimaryMood?.Id))
-                {
-                    <button type="button"
-                            class="mood-btn @(selectedSecondaryMoods.Any(sm => sm.Id == mood.Id) ? "selected" : "")"
-                            style="background-color: @(selectedSecondaryMoods.Any(sm => sm.Id == mood.Id) ? mood.Color : "#f0f0f0")"
-                            @onclick="() => ToggleSecondaryMood(mood)"
-                            disabled="@(selectedSecondaryMoods.Count >= 2 && !selectedSecondaryMoods.Any(sm => sm.Id == mood.Id))">
-                        <span class="mood-icon">@mood.Icon</span>
-                        <span class="mood-name">@mood.Name</span>
-                    </button>
-                }
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Tags (Optional)</label>
-            <div class="tag-input-group">
-                <input type="text" class="form-control" @bind="newTagName" placeholder="Add custom tag..." @onkeypress="HandleTagKeyPress" />
-                <button type="button" class="btn btn-secondary" @onclick="AddCustomTag">Add Tag</button>
-            </div>
-
-            <div class="tags-container mt-2">
-                <p class="text-muted mb-2">Available Tags:</p>
-                @foreach (var tag in allTags)
-                {
-                    <button type="button"
-                            class="tag-chip @(selectedTags.Any(t => t.Id == tag.Id) ? "selected" : "")"
-                            @onclick="() => ToggleTag(tag)">
-                        #@tag.Name
-                    </button>
-                }
-            </div>
-
-            @if (selectedTags.Any())
-            {
-                <div class="mt-2">
-                    <p class="text-muted mb-2">Selected Tags:</p>
-                    @foreach (var tag in selectedTags)
+        <!-- Moods & Tags - Side by Side -->
+        <div class="form-row">
+            <div class="form-col">
+                <label class="form-label">Primary Mood * @(selectedPrimaryMood != null ? selectedPrimaryMood.Icon : "")</label>
+                <div class="mood-selector mood-selector--inline">
+                    @foreach (var mood in allMoods)
                     {
-                        <span class="badge bg-primary me-2">
-                            #@tag.Name
-                            <button type="button" class="btn-close btn-close-white btn-sm ms-1" @onclick="() => RemoveTag(tag)"></button>
-                        </span>
+                        <button type="button"
+                                class="mood-btn @(selectedPrimaryMood?.Id == mood.Id ? "selected" : "")"
+                                style="background-color: @(selectedPrimaryMood?.Id == mood.Id ? mood.Color : "#f0f0f0")"
+                                @onclick="() => SelectPrimaryMood(mood)">
+                            <span class="mood-icon">@mood.Icon</span>
+                            <span class="mood-name">@mood.Name</span>
+                        </button>
                     }
                 </div>
-            }
+            </div>
+
+            <div class="form-col">
+                <label class="form-label">Secondary Moods @string.Join(" ", selectedSecondaryMoods.Select(m => m.Icon))</label>
+                <div class="mood-selector mood-selector--inline">
+                    @foreach (var mood in allMoods.Where(m => m.Id != selectedPrimaryMood?.Id))
+                    {
+                        <button type="button"
+                                class="mood-btn @(selectedSecondaryMoods.Any(sm => sm.Id == mood.Id) ? "selected" : "")"
+                                style="background-color: @(selectedSecondaryMoods.Any(sm => sm.Id == mood.Id) ? mood.Color : "#f0f0f0")"
+                                @onclick="() => ToggleSecondaryMood(mood)"
+                                disabled="@(selectedSecondaryMoods.Count >= 2 && !selectedSecondaryMoods.Any(sm => sm.Id == mood.Id))">
+                            <span class="mood-icon">@mood.Icon</span>
+                            <span class="mood-name">@mood.Name</span>
+                        </button>
+                    }
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Category (Optional)</label>
-            <input type="text" class="form-control" @bind="category" placeholder="e.g., Personal, Work, Travel..." />
-        </div>
+        <!-- Tags & Category -->
+        <div class="form-row">
+            <div class="form-col-large">
+                <label class="form-label">Tags (Optional)</label>
+                <div class="tag-input-group">
+                    <input type="text" class="form-control form-control-sm" @bind="newTagName" placeholder="Add custom tag..." @onkeypress="HandleTagKeyPress" />
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="AddCustomTag">Add</button>
+                </div>
 
-        <div class="button-group">
-            <button class="btn btn-primary btn-lg" @onclick="SaveEntry" disabled="@isSaving">
-                @(isSaving ? "Saving..." : isEditMode ? "Update Entry" : "Save Entry")
+                @if (selectedTags.Any())
+                {
+                    <div class="selected-tags-inline">
+                        @foreach (var tag in selectedTags)
+                        {
+                            <span class="badge bg-primary">
+                                #@tag.Name
+                                <button type="button" class="btn-close btn-close-white btn-sm ms-1" @onclick="() => RemoveTag(tag)"></button>
+                            </span>
+                        }
+                    </div>
+                }
+
+                <div class="tags-container-inline">
+                    @foreach (var tag in allTags)
+                    {
+                        <button type="button"
+                                class="tag-chip @(selectedTags.Any(t => t.Id == tag.Id) ? "selected" : "")"
+                                @onclick="() => ToggleTag(tag)">
+                            #@tag.Name
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="form-col-small">
+                <label class="form-label">Category (Optional)</label>
+                <input type="text" class="form-control" @bind="category" placeholder="e.g., Personal, Work..." />
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="button-group">
+        <button class="btn btn-primary btn-lg" @onclick="SaveEntry" disabled="@isSaving">
+            @(isSaving ? "Saving..." : isEditMode ? "Update Entry" : "Save Entry")
+        </button>
+
+        @if (isEditMode)
+        {
+            <button class="btn btn-danger" @onclick="DeleteEntry" disabled="@isSaving">
+                Delete Entry
             </button>
+        }
 
-            @if (isEditMode)
-            {
-                <button class="btn btn-danger" @onclick="DeleteEntry" disabled="@isSaving">
-                    Delete Entry
-                </button>
-            }
-
-            <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
-        </div>
+        <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
     </div>
 </div>
 
 <style>
+    :root {
+        --color-primary: #4a90e2;
+        --color-danger: #dc3545;
+        --color-secondary: #6c757d;
+        --color-text-primary: #2c3e50;
+        --color-text-secondary: #6c757d;
+        --color-text-muted: #95a5a6;
+        --color-bg-light: #f8f9fa;
+        --color-bg-white: #ffffff;
+        --color-border: #dee2e6;
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 12px;
+        --transition: all 0.2s ease-in-out;
+    }
+
     .create-container {
-        max-width: 900px;
+        max-width: 1200px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 32px 24px;
+        background: var(--color-bg-light);
+    }
+
+    .create-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+        .create-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            margin-bottom: 8px;
+        }
+
+    .create-date {
+        font-size: 1rem;
+        color: var(--color-text-secondary);
+        margin: 0;
     }
 
     .form-section {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background: var(--color-bg-white);
+        padding: 32px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
     }
 
-    .mood-selector {
+    /* Form Rows */
+    .form-row {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-        margin-top: 10px;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .form-col,
+    .form-col-large,
+    .form-col-small {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-col-large {
+        grid-column: span 1;
+    }
+
+    .form-col-small {
+        grid-column: span 1;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 24px;
+    }
+
+    .mt-2 {
+        margin-top: 8px;
+    }
+
+    .d-block {
+        display: block;
+    }
+
+    .text-muted {
+        color: var(--color-text-muted);
+    }
+
+    /* ALL MOOD BUTTONS SAME SIZE - INLINE LAYOUT */
+    .mood-selector--inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
     }
 
     .mood-btn {
-        padding: 15px 10px;
+        padding: 10px;
         border: 2px solid transparent;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         cursor: pointer;
-        transition: all 0.2s;
+        transition: var(--transition);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
+        background: var(--color-bg-light);
+        min-width: 70px;
     }
 
-        .mood-btn:hover {
+        .mood-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow-md);
         }
 
         .mood-btn.selected {
             border-color: #333;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .mood-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.3;
             cursor: not-allowed;
         }
 
     .mood-icon {
-        font-size: 32px;
+        font-size: 24px;
+        line-height: 1;
     }
 
     .mood-name {
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 600;
+        text-align: center;
+        line-height: 1.2;
     }
 
+    /* Tags Inline */
     .tag-input-group {
         display: flex;
-        gap: 10px;
+        gap: 8px;
+        margin-bottom: 12px;
     }
 
-    .tags-container {
+    .selected-tags-inline {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .tags-container-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
     .tag-chip {
-        padding: 6px 12px;
-        border: 1px solid #ddd;
-        border-radius: 20px;
-        background: #f8f9fa;
+        padding: 4px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        background: var(--color-bg-light);
         cursor: pointer;
-        transition: all 0.2s;
-        font-size: 14px;
+        transition: var(--transition);
+        font-size: 0.75rem;
+        white-space: nowrap;
     }
 
         .tag-chip:hover {
@@ -214,15 +323,198 @@
         }
 
         .tag-chip.selected {
-            background: #007bff;
+            background: var(--color-primary);
             color: white;
-            border-color: #007bff;
+            border-color: var(--color-primary);
         }
 
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .bg-primary {
+        background-color: var(--color-primary);
+        color: white;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+        .btn-close:hover {
+            opacity: 1;
+        }
+
+    .btn-close-white {
+        filter: invert(1);
+    }
+
+    .ms-1 {
+        margin-left: 4px;
+    }
+
+    /* Action Buttons */
     .button-group {
         display: flex;
-        gap: 10px;
-        margin-top: 20px;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 12px 32px;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        transition: var(--transition);
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--color-primary);
+        color: white;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #357abd;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-danger {
+        background: var(--color-danger);
+        color: white;
+    }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-secondary {
+        background: var(--color-secondary);
+        color: white;
+    }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-lg {
+        padding: 14px 40px;
+        font-size: 1.1rem;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: 1rem;
+        transition: var(--transition);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        .form-control:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+    .form-control-sm {
+        padding: 6px 10px;
+        font-size: 0.875rem;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: var(--radius-sm);
+        margin-bottom: 20px;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 992px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-col-large,
+        .form-col-small {
+            grid-column: span 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .create-container {
+            padding: 20px 16px;
+        }
+
+        .create-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .form-section {
+            padding: 20px;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+            .button-group .btn {
+                width: 100%;
+            }
+    }
+
+    @@media (max-width: 480px) {
+        .mood-btn {
+            min-width: 60px;
+            padding: 8px;
+        }
+
+        .mood-icon {
+            font-size: 20px;
+        }
+
+        .mood-name {
+            font-size: 9px;
+        }
     }
 </style>
 
@@ -325,12 +617,6 @@
         }
     }
 
-    private async Task OnDateChanged()
-    {
-        await LoadExistingEntry();
-        errorMessage = string.Empty;
-        successMessage = string.Empty;
-    }
 
     private async Task OnContentChanged(string html)
     {
@@ -404,6 +690,20 @@
     {
         errorMessage = string.Empty;
         successMessage = string.Empty;
+
+        // Validation: Can only create new entries for today
+        if (!isEditMode && selectedDate.Date != DateTime.Today)
+        {
+            errorMessage = "You can only create journal entries for today.";
+            return;
+        }
+
+        // Validation: Can only edit past entries that exist
+        if (isEditMode && selectedDate.Date != DateTime.Today && !editEntryId.HasValue)
+        {
+            errorMessage = "You cannot create entries for past dates.";
+            return;
+        }
 
         // Validation
         if (string.IsNullOrWhiteSpace(title))
