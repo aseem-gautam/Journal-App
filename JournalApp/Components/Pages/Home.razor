@@ -555,6 +555,8 @@
         {
             streakInfo = await StreakService.GetStreakInfoAsync();
             todayEntry = await JournalService.GetTodayEntryAsync();
+
+            // Load only 5 most recent entries
             recentEntries = await JournalService.GetEntriesAsync(1, 5);
         }
         catch (Exception ex)
